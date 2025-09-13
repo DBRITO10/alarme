@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Tocar Alarme</title>
+<style>
+:root{--bg:#0b0b0f;--accent:#ff5252;--muted:#cfd8dc}
+html,body{height:100%;margin:0;background:linear-gradient(180deg,#0b0f1a 0%,#0b0710 100%);color:#fff;font-family:Inter,system-ui,Arial}
+.container{height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px}
+h1{font-size:34px;margin:8px}
+.time{font-size:22px;margin-bottom:6px}
+.buttons{display:flex;gap:14px;margin-top:18px}
+.btn{padding:14px 18px;border-radius:12px;border:0;cursor:pointer;font-weight:700}
+.btn.stop{background:#fff;color:#111}
+.btn.snooze{background:var(--accent);color:#111}
+.small{font-size:14px;color:var(--muted);margin-top:12px}
+</style>
+</head>
+<body>
+<div class="container">
+  <div id="label"><h1>🔔 Alarme</h1></div>
+  <div class="time" id="hora">--:--</div>
+  <div class="buttons">
+    <button class="btn stop" id="btnStop">Desligar</button>
+    <button class="btn snooze" id="btnSnooze">Soneca +5m</button>
+  </div>
+  <div class="small">Role para baixo ou toque em Desligar para parar.</div>
+</div>
+
+<script>
+const LS_KEY='app_alarmes_v1';
+function load(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)||'[]') }catch(e){return[]} }
+function save(arr){ localStorage.setItem(LS_KEY, JSON.stringify(arr)) }
+
+const params = new URLSearchParams(location.search);
+const id = params.get('id');
+if(!id){ alert('ID ausente'); location.href='index.html'; }
+let arr = load();
+let item = arr.find(x=>x.id===id);
+if(!item){ alert('Alarme não encontrado'); location.href='index.html'; }
+
+document.getElementById('label').innerHTML = '<h1>🔔 '+(item.label||'Alarme')+'</h1>';
+document.getElementById('hora').textContent = item.time || (new Date().toTimeString().slice(0,5));
+
+let playing = null;
+
+function playSound(){
+  stopSound();
+  if(item.userAudio){ playing = new Audio(item.userAudio); playing.loop=true; playing.play().catch(()=>{}); return; }
+  const src = 'https://actions.google.com/sounds/v1/alarms/'+(item.sound||'beep')+'.ogg';
+  playing = new Audio(src); playing.loop=true; playing.play().catch(()=>{});
+}
+
+function stopSound(){ if(playing){ playing.pause(); playing.currentTime=0; playing=null; } }
+
+document.getElementById('btnStop').addEventListener('click', ()=>{
+  stopSound();
+  // clear _ringing flags and optionally deactivate
+  arr = load(); const it = arr.find(x=>x.id===id); if(it){ it._ringing=false; it.active = false; save(arr); }
+  location.href='index.html';
+});
+
+document.getElementById('btnSnooze').addEventListener('click', ()=>{
+  stopSound();
+  const sno = Number(item.snooze||5);
+  // schedule new time for snooze (in minutes)
+  const d = new Date(); d.setMinutes(d.getMinutes()+sno);
+  const hhmm = d.toTimeString().slice(0,5);
+  arr = load(); const it = arr.find(x=>x.id===id); if(it){ it._ringing=false; it.time = hhmm; it.active = true; save(arr); }
+  location.href='index.html';
+});
+
+// start immediately
+playSound();
+
+// allow stopping by scrolling - add listener
+let startY = null;
+window.addEventListener('touchstart', e=>{ startY = e.touches[0].clientY; });
+window.addEventListener('touchend', e=>{ if(startY===null) return; const endY = (e.changedTouches && e.changedTouches[0])? e.changedTouches[0].clientY : null; if(endY && startY - endY > 100){ // swipe up
+    document.getElementById('btnStop').click();
+  } startY = null;
+});
+
+</script>
+</body>
+</html>

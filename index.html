@@ -1,171 +1,103 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Alarme Simples</title>
-  <style>
-    :root{--bg:#0f1724;--card:#0b1220;--accent:#06b6d4;--muted:#94a3b8;color-scheme:dark}
-    *{box-sizing:border-box;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial}
-    html,body{height:100%;margin:0;background:linear-gradient(180deg,#071029 0%,#071422 100%);color:#e6eef6}
-    .wrap{max-width:720px;margin:36px auto;padding:20px}
-    header{display:flex;justify-content:space-between;align-items:center}
-    h1{font-size:20px;margin:0}
-    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.12));padding:18px;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.6)}
-    label{display:block;font-size:13px;color:var(--muted);margin-top:12px}
-    input[type=time], input[type=number], select{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:inherit}
-    .row{display:grid;grid-template-columns:1fr 120px;gap:12px}
-    .buttons{display:flex;gap:8px;margin-top:14px}
-    button{padding:10px 12px;border-radius:8px;border:0;cursor:pointer;background:var(--accent);color:#032;font-weight:600}
-    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
-    .big{font-size:14px;padding:14px}
-    .status{margin-top:12px;font-size:14px;color:#bfefff}
-    footer{margin-top:18px;text-align:center;color:var(--muted);font-size:13px}
-    .flex{display:flex;gap:10px;align-items:center}
-    #localFile{display:none;margin-top:10px}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Alarmes — Início</title>
+<style>
+:root{--bg:#0f1724;--card:#0b1220;--accent:#06b6d4;--muted:#94a3b8;color-scheme:dark}
+*{box-sizing:border-box;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial}
+html,body{height:100%;margin:0;background:linear-gradient(180deg,#071029 0%,#071422 100%);color:#e6eef6}
+.container{max-width:900px;margin:20px auto;padding:18px}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+h1{margin:0;font-size:20px}
+.card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.12));padding:16px;border-radius:10px;box-shadow:0 6px 18px rgba(2,6,23,0.6)}
+.alarmes{margin-top:12px}
+.alarm{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);margin-bottom:8px}
+.col{display:flex;flex-direction:column}
+.row{display:flex;gap:8px;align-items:center}
+.btn{padding:8px 12px;border-radius:8px;border:0;background:var(--accent);color:#032;font-weight:600;cursor:pointer}
+.btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.05);color:var(--muted)}
+.switch{cursor:pointer;padding:6px 10px;border-radius:6px;border:0}
+.small{font-size:13px;color:var(--muted)}
+.footer{margin-top:14px;text-align:center;color:var(--muted);font-size:13px}
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <header><h1>Alarme Simples</h1></header>
-
-    <div class="card" style="margin-top:14px">
-      <label>Definir hora do alarme (HH:MM)</label>
-      <input id="alarmTime" type="time" />
-
-      <div class="row">
-        <div>
-          <label>Ou: Contagem regressiva (minutos)</label>
-          <input id="countdownMins" type="number" min="1" placeholder="Ex: 10" />
-        </div>
-        <div>
-          <label>Soneca (min)</label>
-          <input id="snoozeMin" type="number" min="1" value="5" />
-        </div>
-      </div>
-
-      <label>Som</label>
-      <select id="soundSel">
-        <option value="beep">Beep (padrão)</option>
-        <option value="melody">Melodia curta</option>
-        <option value="alarm_clock">Relógio</option>
-        <option value="bell">Sino</option>
-        <option value="chime">Carrilhão</option>
-        <option value="digital">Digital</option>
-        <option value="buzz">Buzz</option>
-        <option value="horn">Buzina</option>
-        <option value="gong">Gongo</option>
-        <option value="bird">Pássaros</option>
-        <option value="wave">Onda</option>
-        <option value="rain">Chuva</option>
-        <option value="wind">Vento</option>
-        <option value="flute">Flauta</option>
-        <option value="piano">Piano</option>
-        <option value="guitar">Violão</option>
-        <option value="drum">Tambor</option>
-        <option value="trumpet">Trompete</option>
-        <option value="harp">Harpa</option>
-        <option value="laser">Laser</option>
-        <option value="siren">Sirene</option>
-        <option value="local">🎵 Música do dispositivo...</option>
-      </select>
-      <input type="file" id="localFile" accept="audio/*">
-
-      <div class="buttons">
-        <button id="setAlarm" class="big">Ativar</button>
-        <button id="stopAlarm" class="ghost big">Parar</button>
-        <button id="testSound" class="ghost big">Testar som</button>
-      </div>
-
-      <div class="status" id="status">Alarme inativo.</div>
+<div class="container">
+  <div class="header">
+    <h1>Alarmes</h1>
+    <div class="row">
+      <button class="btn" id="btnNovo">+ Novo Alarme</button>
+      <button class="btn ghost" id="btnImport">Export</button>
     </div>
-
-    <footer>Permita notificações e som no navegador. Funciona offline no celular. Vibre se suportado.</footer>
   </div>
 
+  <div class="card">
+    <div class="small">Lista de alarmes cadastrados (toque para alternar, editar ou excluir):</div>
+    <div class="alarmes" id="lista"></div>
+    <div class="small" style="margin-top:8px">Dica: permita notificações e som no navegador.</div>
+  </div>
+
+  <div class="footer">Feito por você — Alarme Simples</div>
+</div>
+
 <script>
-let alarmTimeout = null;
-let alarmWhen = null;
-let audioCtx = null;
-let playingOsc = null;
-let userAudio = null;
+/* Gerenciamento de alarmes via localStorage */
+const LS_KEY = 'app_alarmes_v1';
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+function load(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)||'[]'); }catch(e){ return []; } }
+function save(arr){ localStorage.setItem(LS_KEY, JSON.stringify(arr)); }
+function render(){
+  const lista = document.getElementById('lista'); lista.innerHTML='';
+  const arr = load().sort((a,b)=>a.time.localeCompare(b.time));
+  if(arr.length===0){ lista.innerHTML='<div class="small">Nenhum alarme. Clique em "+ Novo Alarme".</div>'; return; }
+  arr.forEach(a=>{
+    const el = document.createElement('div'); el.className='alarm';
+    const left = document.createElement('div'); left.className='col';
+    const title = document.createElement('div'); title.textContent = a.time + (a.label? '  —  '+a.label : '');
+    const sub = document.createElement('div'); sub.className='small'; sub.textContent = (a.active? 'Ativo':'Inativo') + ' • Som: '+(a.soundName||a.sound);
+    left.appendChild(title); left.appendChild(sub);
+    const right = document.createElement('div'); right.className='row';
+    const toggle = document.createElement('button'); toggle.className='switch'; toggle.textContent = a.active? '🔛' : '⚪'; toggle.addEventListener('click', ()=>{ a.active = !a.active; save(arr.map(x=> x.id===a.id? a:x)); render(); });
+    const edit = document.createElement('button'); edit.className='btn ghost'; edit.textContent='Editar'; edit.addEventListener('click', ()=>{ location.href = 'editar.html?id='+encodeURIComponent(a.id); });
+    const del = document.createElement('button'); del.className='btn ghost'; del.textContent='Excluir'; del.addEventListener('click', ()=>{ if(confirm('Excluir alarme?')){ const n=arr.filter(x=>x.id!==a.id); save(n); render(); } });
+    // quick open when active to test navigation
+    const open = document.createElement('button'); open.className='btn ghost'; open.textContent='Abrir (simular)'; open.addEventListener('click', ()=>{ location.href = 'tocar.html?id='+encodeURIComponent(a.id); });
+    right.appendChild(toggle); right.appendChild(edit); right.appendChild(del); right.appendChild(open);
+    el.appendChild(left); el.appendChild(right);
+    lista.appendChild(el);
+  });
+}
 
-const alarmTimeInput = document.getElementById('alarmTime');
-const countdownInput = document.getElementById('countdownMins');
-const snoozeInput = document.getElementById('snoozeMin');
-const setBtn = document.getElementById('setAlarm');
-const stopBtn = document.getElementById('stopAlarm');
-const testBtn = document.getElementById('testSound');
-const statusEl = document.getElementById('status');
-const soundSel = document.getElementById('soundSel');
-const localFile = document.getElementById('localFile');
-
-soundSel.addEventListener('change', ()=>{
-  if(soundSel.value==='local'){ localFile.style.display='block'; }
-  else { localFile.style.display='none'; userAudio=null; }
+document.getElementById('btnNovo').addEventListener('click', ()=> location.href='novo.html');
+document.getElementById('btnImport').addEventListener('click', ()=>{
+  const data = JSON.stringify(load(), null, 2);
+  const blob = new Blob([data], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='alarmes.json'; a.click();
+  URL.revokeObjectURL(url);
 });
 
-localFile.addEventListener('change', e=>{
-  const file = e.target.files[0];
-  if(file){ userAudio = URL.createObjectURL(file); }
-});
+render();
 
-function ensureAudio(){ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
-function playBeep(duration=1000, freq=880){ ensureAudio(); const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.type='sine'; o.frequency.value = freq; g.gain.value=0.0001; o.connect(g); g.connect(audioCtx.destination); o.start(); g.gain.exponentialRampToValueAtTime(0.2,audioCtx.currentTime+0.01); g.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+duration/1000); setTimeout(()=>{try{o.stop();}catch(e){}}, duration+20); return {osc:o, gain:g}; }
-
-function playMelody(){ ensureAudio(); const notes=[880,988,1046,1174,1046,988]; let i=0; const seq = setInterval(()=>{ if(i>=notes.length){ clearInterval(seq); return; } playBeep(320,notes[i]); i++ }, 360); return seq; }
-
-function playAudioFile(url){ const a = new Audio(url); a.loop=true; a.play(); return a; }
-
-function startAlarmSound(){ 
-  stopAlarmSound();
-  if(userAudio){ playingOsc = playAudioFile(userAudio); }
-  else {
-    switch(soundSel.value){
-      case 'melody': playingOsc = playMelody(); break;
-      case 'beep': playingOsc = setInterval(()=>playBeep(700,880),900); break;
-      default: playingOsc = playAudioFile(`https://actions.google.com/sounds/v1/alarms/${soundSel.value}.ogg`);
+/* Checagem periódica para disparo — fica em todas as páginas via interval */
+setInterval(()=>{
+  const arr = load();
+  const now = new Date();
+  const hhmm = now.toTimeString().slice(0,5);
+  arr.forEach(a=>{
+    if(a.active && !a._ringing){
+      // support exact match and countdown flag
+      if(a.time === hhmm){
+        a._ringing = true; save(arr.map(x=> x.id===a.id? a:x));
+        // open tocar.html for this alarm
+        location.href = 'tocar.html?id='+encodeURIComponent(a.id);
+      }
     }
-  }
-  if(navigator.vibrate) navigator.vibrate([500,200,500,200]);
-}
+  });
+}, 1000);
 
-function stopAlarmSound(){ 
-  if(playingOsc){ 
-    if(typeof playingOsc==='number') clearInterval(playingOsc);
-    else if(playingOsc instanceof Audio){ playingOsc.pause(); playingOsc=null; }
-    else clearInterval(playingOsc);
-    playingOsc=null; 
-  }
-  if(navigator.vibrate) navigator.vibrate(0);
-}
-
-function notifyNow(title, body){ if(Notification.permission==='granted'){ try{ new Notification(title,{body}); }catch(e){} } }
-async function requestNotification(){ if('Notification' in window){ if(Notification.permission==='default') await Notification.requestPermission(); } }
-
-function clearExisting(){ if(alarmTimeout) { clearTimeout(alarmTimeout); alarmTimeout=null; } alarmWhen=null; }
-
-function scheduleFor(ms){ clearExisting(); alarmWhen = Date.now()+ms; alarmTimeout = setTimeout(()=>{ triggerAlarm(); }, ms); }
-
-function setAlarmByTimeStr(timestr){ if(!timestr) return false; const [hh,mm]=timestr.split(':').map(Number); const now=new Date(); const target=new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm, 0,0); if(target<=now) target.setDate(target.getDate()+1); const ms = target - now; scheduleFor(ms); return true; }
-
-function triggerAlarm(){ startAlarmSound(); notifyNow('⏰ ALARME', 'Hora!'); statusEl.textContent = '🔔 Tocando — clique em Parar ou Soneca.'; document.body.animate([{filter:'brightness(1)'},{filter:'brightness(1.6)'}],{duration:400,iterations:6}); }
-
-setBtn.addEventListener('click', async ()=>{ await requestNotification(); const cd = parseInt(countdownInput.value); if(cd && cd>0){ scheduleFor(cd*60*1000); statusEl.textContent = `Agendado para daqui a ${cd} minuto(s).`; return; } const t = alarmTimeInput.value; if(t){ const ok = setAlarmByTimeStr(t); if(ok) statusEl.textContent = `Alarme definido para ${t}.`; return; } statusEl.textContent = 'Informe hora ou contagem regressiva.'; });
-
-stopBtn.addEventListener('click', ()=>{ clearExisting(); stopAlarmSound(); statusEl.textContent = 'Alarme parado.'; });
-
-testBtn.addEventListener('click', ()=>{ if(userAudio){ playAudioFile(userAudio); } else if(soundSel.value==='melody') playMelody(); else if(soundSel.value==='beep') playBeep(800,880); else playAudioFile(`https://actions.google.com/sounds/v1/alarms/${soundSel.value}.ogg`); });
-
-stopBtn.addEventListener('dblclick', ()=>{ if(!alarmWhen) return; const sno = parseInt(snoozeInput.value) || 5; clearExisting(); stopAlarmSound(); scheduleFor(sno*60*1000); statusEl.textContent = `Soneca: ${sno} minuto(s).`; });
-
-window.addEventListener('beforeunload', ()=>{ localStorage.setItem('alarm_time', alarmTimeInput.value||''); localStorage.setItem('countdown_mins', countdownInput.value||''); localStorage.setItem('snooze_min', snoozeInput.value||'5'); });
-
-window.addEventListener('load', ()=>{ alarmTimeInput.value = localStorage.getItem('alarm_time')||''; countdownInput.value = localStorage.getItem('countdown_mins')||''; snoozeInput.value = localStorage.getItem('snooze_min')||'5'; });
-
-setInterval(()=>{ if(alarmWhen){ const rem = alarmWhen - Date.now(); if(rem<=0) return; const mm = Math.floor(rem/60000); const ss = Math.floor((rem%60000)/1000); statusEl.textContent = `Alarme em ${mm}m ${ss}s.`; } }, 800);
-
-document.body.addEventListener('click', ()=>{ if(playingOsc){ stopAlarmSound(); clearExisting(); statusEl.textContent='Alarme parado (toque na página).'; } });
 </script>
 </body>
 </html>
