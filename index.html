@@ -1,170 +1,141 @@
-<!doctype html>
-<html lang="pt-BR">
+<!DOCTYPE html>
+<html lang="pt-br">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8">
   <title>Alarme Simples</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    :root{--bg:#0f1724;--card:#0b1220;--accent:#06b6d4;--muted:#94a3b8;color-scheme:dark}
-    *{box-sizing:border-box;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial}
-    html,body{height:100%;margin:0;background:linear-gradient(180deg,#071029 0%,#071422 100%);color:#e6eef6}
-    .wrap{max-width:720px;margin:36px auto;padding:20px}
-    header{display:flex;justify-content:space-between;align-items:center}
-    h1{font-size:20px;margin:0}
-    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.12));padding:18px;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.6)}
-    label{display:block;font-size:13px;color:var(--muted);margin-top:12px}
-    input[type=time], input[type=number], select{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:inherit}
-    .row{display:grid;grid-template-columns:1fr 120px;gap:12px}
-    .buttons{display:flex;gap:8px;margin-top:14px}
-    button{padding:10px 12px;border-radius:8px;border:0;cursor:pointer;background:var(--accent);color:#032;font-weight:600}
-    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
-    .big{font-size:14px;padding:14px}
-    .status{margin-top:12px;font-size:14px;color:#bfefff}
-    footer{margin-top:18px;text-align:center;color:var(--muted);font-size:13px}
-    .flex{display:flex;gap:10px;align-items:center}
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    h1 { margin-bottom: 20px; }
+    label, select, input, button {
+      margin: 8px 0;
+      font-size: 16px;
+    }
+    #alarmeTela {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: #222;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    #alarmeTela button {
+      padding: 15px 25px;
+      margin: 10px;
+      font-size: 18px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    #desligar { background: #e53935; color: white; }
+    #soneca { background: #43a047; color: white; }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <header><h1>Alarme Simples</h1><div class="flex"><small>Sem pastas • Arquivo único</small></div></header>
-
-    <div class="card" style="margin-top:14px">
-      <label>Definir hora do alarme (HH:MM)</label>
-      <input id="alarmTime" type="time" />
-
-      <div class="row">
-        <div>
-          <label>Ou: Contagem regressiva (minutos)</label>
-          <input id="countdownMins" type="number" min="1" placeholder="Ex: 10" />
-        </div>
-        <div>
-          <label>Soneca (min)</label>
-          <input id="snoozeMin" type="number" min="1" value="5" />
-        </div>
-      </div>
-
-      <label>Som</label>
-      <select id="soundSel">
-        <option value="beep">Beep (padrão)</option>
-        <option value="melody">Melodia curta</option>
+  <div id="principal">
+    <h1>⏰ Alarme Simples</h1>
+    <label>Defina a hora:
+      <input type="time" id="horaAlarme">
+    </label>
+    <br>
+    <label>Som do alarme:
+      <select id="somAlarme">
+        <option value="beep">Beep</option>
+        <option value="digital">Digital</option>
+        <option value="sino">Sino</option>
       </select>
-
-      <div class="buttons">
-        <button id="setAlarm" class="big">Ativar</button>
-        <button id="stopAlarm" class="ghost big">Parar</button>
-        <button id="testSound" class="ghost big">Testar som</button>
-      </div>
-
-      <div class="status" id="status">Alarme inativo.</div>
-    </div>
-
-    <footer>Permita notificações e som no navegador. Funciona offline no celular (sem instalar). Vibre se o dispositivo suportar.</footer>
+    </label>
+    <br>
+    <label>Ou escolha música:
+      <input type="file" id="arquivoMusica" accept="audio/*">
+    </label>
+    <br>
+    <button onclick="ativarAlarme()">Ativar Alarme</button>
   </div>
 
-<script>
-// simples alarme sem arquivos externos - gera som via WebAudio
-let alarmTimeout = null;
-let alarmWhen = null;
-let audioCtx = null;
-let playingOsc = null;
+  <div id="alarmeTela">
+    <h1>🚨 Alarme tocando!</h1>
+    <button id="desligar" onclick="desligarAlarme()">Desligar</button>
+    <button id="soneca" onclick="soneca()">Soneca (+5min)</button>
+  </div>
 
-const alarmTimeInput = document.getElementById('alarmTime');
-const countdownInput = document.getElementById('countdownMins');
-const snoozeInput = document.getElementById('snoozeMin');
-const setBtn = document.getElementById('setAlarm');
-const stopBtn = document.getElementById('stopAlarm');
-const testBtn = document.getElementById('testSound');
-const statusEl = document.getElementById('status');
-const soundSel = document.getElementById('soundSel');
+  <script>
+    let horaAlarme = null;
+    let intervalo;
+    let audio = null;
+    let musicaUsuario = null;
 
-function ensureAudio(){ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
-function playBeep(duration=1000, freq=880){ ensureAudio(); const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.type='sine'; o.frequency.value = freq; g.gain.value=0.0001; o.connect(g); g.connect(audioCtx.destination); o.start(); g.gain.exponentialRampToValueAtTime(0.2,audioCtx.currentTime+0.01); g.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+duration/1000); setTimeout(()=>{try{o.stop();}catch(e){}}, duration+20); return {osc:o, gain:g}; }
+    const sonsPredefinidos = {
+      beep: "https://actions.google.com/sounds/v1/alarms/beep_short.ogg",
+      digital: "https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg",
+      sino: "https://actions.google.com/sounds/v1/alarms/bugle_tune.ogg"
+    };
 
-function playMelody(){ // curta melodia
-  ensureAudio(); const notes=[880,988,1046,1174,1046,988]; let i=0; const seq = setInterval(()=>{ if(i>=notes.length){ clearInterval(seq); return; } playBeep(320,notes[i]); i++ }, 360); return seq; }
+    document.getElementById("arquivoMusica").addEventListener("change", function(e){
+      const file = e.target.files[0];
+      if (file) {
+        musicaUsuario = URL.createObjectURL(file);
+      }
+    });
 
-function startAlarmSound(){ if(soundSel.value==='melody'){ playingOsc = playMelody(); } else { // loop beep
-    playingOsc = setInterval(()=>playBeep(700,880), 900);
-  }
-  // vibrate if possible
-  if(navigator.vibrate) navigator.vibrate([500,200,500,200]);
-}
-function stopAlarmSound(){ if(playingOsc){ if(typeof playingOsc === 'number') clearInterval(playingOsc); else if(typeof playingOsc === 'object' && playingOsc.clearInterval) playingOsc.clearInterval(); playingOsc = null; }
-  if(navigator.vibrate) navigator.vibrate(0);
-}
+    function ativarAlarme() {
+      horaAlarme = document.getElementById("horaAlarme").value;
+      if (!horaAlarme) {
+        alert("Defina uma hora para o alarme!");
+        return;
+      }
+      alert("Alarme definido para " + horaAlarme);
+      intervalo = setInterval(verificarAlarme, 1000);
+    }
 
-function notifyNow(title, body){ if(Notification.permission==='granted'){ try{ new Notification(title,{body,icon:null}); }catch(e){} } }
+    function verificarAlarme() {
+      const agora = new Date();
+      const horaAtual = agora.toTimeString().slice(0,5);
+      if (horaAtual === horaAlarme) {
+        tocarAlarme();
+        clearInterval(intervalo);
+      }
+    }
 
-async function requestNotification(){ if('Notification' in window){ if(Notification.permission==='default') await Notification.requestPermission(); } }
+    function tocarAlarme() {
+      document.getElementById("alarmeTela").style.display = "flex";
+      let som = musicaUsuario || sonsPredefinidos[document.getElementById("somAlarme").value];
+      audio = new Audio(som);
+      audio.loop = true;
+      audio.play();
+    }
 
-function clearExisting(){ if(alarmTimeout) { clearTimeout(alarmTimeout); alarmTimeout=null; } alarmWhen=null; }
+    function desligarAlarme() {
+      if (audio) {
+        audio.pause();
+        audio.currentTime = 0;
+      }
+      document.getElementById("alarmeTela").style.display = "none";
+    }
 
-function scheduleFor(ms){ clearExisting(); alarmWhen = Date.now()+ms; alarmTimeout = setTimeout(()=>{ triggerAlarm(); }, ms); updateStatus(); }
-
-function setAlarmByTimeStr(timestr){ // timestr: HH:MM
-  if(!timestr) return false;
-  const [hh,mm]=timestr.split(':').map(Number);
-  const now=new Date(); const target=new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm, 0,0);
-  if(target<=now) target.setDate(target.getDate()+1);
-  const ms = target - now; scheduleFor(ms); return true;
-}
-
-function triggerAlarm(){ startAlarmSound(); notifyNow('⏰ ALARME', 'Hora!'); statusEl.textContent = '🔔 Tocando — clique em Parar ou Soneca.';
-  // show a big visual alert
-  document.body.animate([{filter:'brightness(1)'},{filter:'brightness(1.6)'}],{duration:400,iterations:6});
-}
-
-setBtn.addEventListener('click', async ()=>{
-  await requestNotification();
-  const cd = parseInt(countdownInput.value);
-  if(cd && cd>0){ scheduleFor(cd*60*1000); statusEl.textContent = `Agendado para daqui a ${cd} minuto(s).`; return; }
-  const t = alarmTimeInput.value;
-  if(t){ const ok = setAlarmByTimeStr(t); if(ok) statusEl.textContent = `Alarme definido para ${t}.`; return; }
-  statusEl.textContent = 'Informe hora ou contagem regressiva.';
-});
-
-stopBtn.addEventListener('click', ()=>{
-  clearExisting(); stopAlarmSound(); statusEl.textContent = 'Alarme parado.';
-});
-
-testBtn.addEventListener('click', ()=>{ ensureAudio(); if(soundSel.value==='melody') playMelody(); else playBeep(800,880); });
-
-// snooze by re-using the snooze minutes when alarm is sounding
-stopBtn.addEventListener('dblclick', ()=>{
-  // double click for snooze
-  if(!alarmWhen) return;
-  const sno = parseInt(snoozeInput.value) || 5;
-  clearExisting(); stopAlarmSound(); scheduleFor(sno*60*1000);
-  statusEl.textContent = `Soneca: ${sno} minuto(s).`;
-});
-
-// keyboard quick keys
-window.addEventListener('keydown', (e)=>{
-  if(e.key==='s') testBtn.click();
-  if(e.key===' ') stopBtn.click();
-});
-
-// persist last values
-window.addEventListener('beforeunload', ()=>{
-  localStorage.setItem('alarm_time', alarmTimeInput.value||'');
-  localStorage.setItem('countdown_mins', countdownInput.value||'');
-  localStorage.setItem('snooze_min', snoozeInput.value||'5');
-});
-
-window.addEventListener('load', ()=>{
-  alarmTimeInput.value = localStorage.getItem('alarm_time')||'';
-  countdownInput.value = localStorage.getItem('countdown_mins')||'';
-  snoozeInput.value = localStorage.getItem('snooze_min')||'5';
-});
-
-// show live countdown
-setInterval(()=>{
-  if(alarmWhen){ const rem = alarmWhen - Date.now(); if(rem<=0) return; const mm = Math.floor(rem/60000); const ss = Math.floor((rem%60000)/1000); statusEl.textContent = `Alarme em ${mm}m ${ss}s.`; }
-}, 800);
-
-document.body.addEventListener('click', ()=>{
-  if(playingOsc){ stopAlarmSound(); clearExisting(); statusEl.textContent='Alarme parado (toque na página).'; }
-});
-</script>
+    function soneca() {
+      desligarAlarme();
+      const agora = new Date();
+      agora.setMinutes(agora.getMinutes() + 5);
+      horaAlarme = agora.toTimeString().slice(0,5);
+      intervalo = setInterval(verificarAlarme, 1000);
+      alert("Soneca ativada! Novo alarme: " + horaAlarme);
+    }
+  </script>
 </body>
 </html>
